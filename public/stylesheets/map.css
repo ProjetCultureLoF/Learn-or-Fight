@@ -1,0 +1,64 @@
+path {
+    fill: #B4CCB9;
+    /* Couleur de remplissage */
+    stroke: #666;
+    /* Couleur de la bordure */
+    stroke-width: 1;
+    /* Largeur de la bordure */
+}
+
+/* Ajoutez des styles supplémentaires au survol si nécessaire */
+path:hover {
+    fill: #8CBF8C;
+    /* Nouvelle couleur de remplissage au survol */
+}
+
+/* Maths */
+.Maths {
+    fill: #FA8072;
+}
+
+/* Geographie */
+.Geographie {
+    fill: #87CEEB;
+}
+
+/* Histoire */
+.Histoire {
+    fill: #E6E6FA;
+}
+
+/* Litterature */
+.Litterature {
+    fill: #FFB6C1;
+}
+
+/* Musique */
+.Musique {
+    fill: #FFDAB9;
+}
+
+/* Cinema */
+.Cinema {
+    fill: #C5E8FB;
+}
+
+/* Sport */
+.Sport {
+    fill: #AEEEEE;
+}
+
+/* Sciences */
+.Sciences {
+    fill: #98FB98;
+}
+
+/* Divertissement */
+.Divertissement {
+    fill: #FFFFE0;
+}
+
+/* Films-et-series */
+.Films-et-series {
+    fill: #D8BFD8;
+}

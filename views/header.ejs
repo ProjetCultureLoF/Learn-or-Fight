@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="stylesheets/header.css">
+    
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="navbar">
+            <div class="left">
+                <a href="/dashboard">Accueil</a>
+                <a href="#">Découvrir</a>
+            </div>
+            
+            <div class="right">
+                <% if (userLoggedIn) { %>
+                    <a href="/mon-compte">Mon compte</a>
+                <% } else { %>
+                    <a href="/">Se connecter</a>
+                    <a href="/register">S'enregistrer</a>
+                <% } %>
+            </div>
+            
+        </div>
+        
+    </header>
+</body>
+</html>
