@@ -2,8 +2,11 @@ const express = require('express');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
 const sha256 = require("crypto-js/sha256");
+const crypto = require("crypto");
 const ejs = require('ejs');
 const cookieParser = require("cookie-parser");
+const tokenGen = require("./src/tokenGen")
+
 
 const app = express();
 const port = 3000;
@@ -49,12 +52,15 @@ app.get('/', (req, res) => {
 
 // Route pour gérer la soumission du formulaire de login
 app.post('/login', (req, res) => {
+    const token = crypto.randomBytes(64).toString('hex')
     const username = req.body.username;
     const password = sha256(req.body.password);
 
     // Vérification des informations de connexion dans la base de données
     const query = `SELECT * FROM User WHERE name_user = "${username}" AND password_user = "${password}"`;
     console.log('Query:', query, [username, password]); // Log de la requête SQL
+
+    //Requête SQL du pseudo et mdp
     db.query(query, [username, password], (err, results) => {
         if (err) {
             console.error('Erreur lors de la vérification des informations de connexion : ' + err.stack);
@@ -64,19 +70,31 @@ app.post('/login', (req, res) => {
 
         if (results.length > 0) {
             console.log('Utilisateur connecté avec succès');
-            res.cookie("sessionIdCookie", username, { httpOnly: true });
+            const query = `UPDATE user SET token_user = "${token}" WHERE name_user = "${username}"`
+            db.query(query, [username, token], (err, results) => {
+                if (err) {
+                    console.error('Erreur lors de la vérification des informations de connexion : ' + err.stack);
+                    res.status(500).send('Erreur serveur');
+                    return;
+                }
+            });
+            res.cookie("sessionIdCookie", token, { httpOnly: true }, { expires: new Date(0) });
             res.redirect('/dashboard');
 
-        } else {
+        } 
+
+        else {
             console.log('Échec de la connexion');
             res.status(401).send('Échec de la connexion');
         }
     });
 });
+
 app.post('/register', (req, res) => {
     console.log('Appuie du bouton');
     res.redirect('/register');
 });
+
 
 app.get('/register', (req, res) => {
     res.render('register', {
@@ -87,13 +105,14 @@ app.get('/register', (req, res) => {
       fontColor: 'green'
       // Ajoutez d'autres données nécessaires pour la page d'inscription
     });
-  });
+});
 
 app.post('/register-data', (req, res) => {
+    const token = crypto.randomBytes(64).toString('hex')
     let { username, password, confirmPassword, email } = req.body;
     if (password === confirmPassword) {
         password = sha256(password);
-        const query = `INSERT INTO User (name_user, password_user, email_user, id_clan) VALUES ("${username}", "${password}", "${email}", 1)`;
+        const query = `INSERT INTO User (name_user, password_user, email_user, id_clan, token_user) VALUES ("${username}", "${password}", "${email}", 1, "${token}")`;
         console.log('Query:', query, [username, password]); // Log de la requête SQL
 
         db.query(query, [username, password, email], (err, results) => {
@@ -104,7 +123,8 @@ app.post('/register-data', (req, res) => {
             }
 
             // Succès de l'inscription, rediriger vers la page de connexion
-            res.redirect('/');
+            res.cookie("sessionIdCookie", token, { httpOnly: true }, { expires: new Date(0) });
+            res.redirect('/dashboard');
         });
     } else {
         // Les mots de passe ne correspondent pas, afficher un message d'erreur
@@ -119,10 +139,10 @@ app.post('/register-data', (req, res) => {
 });
 
 app.get('/mon-compte', (req, res) => {
-    usernames = req.cookies.sessionIdCookie
-    console.log("Nom d'utilisateur: ", usernames)
-    const query = `SELECT * FROM user WHERE name_user = "${usernames}"`
-    db.query(query, [usernames], (err, results) => {
+    const token = req.cookies.sessionIdCookie
+    console.log("Nom d'utilisateur: ", token)
+    const query = `SELECT * FROM user WHERE token_user = "${token}"`
+    db.query(query, [token], (err, results) => {
         if (err) {
             console.error('Erreur lors de l\'insertion des données d\'inscription : ' + err.stack);
             res.status(500).send('Erreur serveur');
@@ -131,6 +151,7 @@ app.get('/mon-compte', (req, res) => {
         else {
             console.log(results[0]["email_user"]);
             const emails = results[0]["email_user"];
+            const usernames = results[0]["name_user"]
             res.render('mon-compte', {
                 userLoggedIn: true,
                 username: usernames,
@@ -142,22 +163,42 @@ app.get('/mon-compte', (req, res) => {
     
 });
 
+app.post("/logoff", (req, res) => {
+    console.log("logging off");
+    const token = req.cookies.sessionIdCookie;
+    const query = `UPDATE user SET token_user = NULL WHERE token_user = "${token}"`
+    db.query(query, [token], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de l\'insertion des données d\'inscription : ' + err.stack);
+            res.status(500).send('Erreur serveur');
+            return;
+        }
+    });
+
+    res.clearCookie("sessionIdCookie");
+
+    res.redirect('/dashboard');
+});
+
 app.route('/dashboard')
     .get((req, res) => {
         if (req.cookies.sessionIdCookie) {
-            // Rediriger vers la page si le client possède un cookie
-            res.render('map', { getDataFrance: dataFrance,  userLoggedIn: true});
+                console.log("In dashboard")
+                // Rediriger vers la page si le client possède un cookie
+                res.render('map', { getDataFrance: dataFrance,  userLoggedIn: true});
         } else {
-            //Sinon renvoie sur register avec une erreur
-            res.render('register', {
-                userLoggedIn: false,
-                pageTitle: 'Register Page',
-                backgroundColor: '#f0f0f0',
-                fontColor: 'red',
-                errorMessage: 'Veuillez vous connecter pour continuer'
-            });
+                //Sinon renvoie sur register avec une erreur
+                res.render('register', {
+                    userLoggedIn: false,
+                    pageTitle: 'Register Page',
+                    backgroundColor: '#f0f0f0',
+                    fontColor: 'red',
+                    errorMessage: 'Veuillez vous connecter pour continuer'
+                }
+            );
         }
-    });
+    }
+);
 
 app.route('/:dep')
     .get((req, res) => {
@@ -172,3 +213,18 @@ app.route('/:dep')
 app.listen(port, () => {
     console.log(`Serveur en cours d'exécution sur http://localhost:${port}`);
 });
+/*
+function userLoggedIn(token){
+    const query = `SELECT * FROM user where token_user == ${token};`;
+    db.query(query, [token], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de l\'insertion des données d\'inscription : ' + err.stack);
+            res.status(500).send('Erreur serveur');
+            return;
+        }
+        else if(results[0]["name_user"] == ""){
+            return false    
+        }
+        else { return true }
+    });
+};*/

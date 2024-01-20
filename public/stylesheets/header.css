@@ -60,3 +60,21 @@ a {
     color: #fff; /* Couleur des liens */
     text-decoration: none; /* Supprime le soulignement des liens */
 }
+
+
+.right button{
+    padding: 12px;
+    background-color: #4caf50;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+.right button:hover{
+    background-color: #50ce54;
+}
+
+.navbar button {
+    color: #fff; /* Couleur des liens */
+    text-decoration: none; /* Supprime le soulignement des liens */
+    border: none;
+}
+
