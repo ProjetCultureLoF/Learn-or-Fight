@@ -5,7 +5,6 @@ const sha256 = require("crypto-js/sha256");
 const crypto = require("crypto");
 const ejs = require('ejs');
 const cookieParser = require("cookie-parser");
-const tokenGen = require("./src/tokenGen")
 
 
 const app = express();
@@ -44,14 +43,31 @@ const dataFrance = ejs.fileLoader('./src/departements-version-simplifiee.geojson
 
 // Route pour la page de login
 app.get('/', (req, res) => {
-    res.render('login',{
+    if (req.cookies.sessionIdCookie) {
+        console.log("In dashboard")
+        // Rediriger vers la page si le client possède un cookie
+        res.render('map', { getDataFrance: dataFrance,  userLoggedIn: true});
+} else {
+        //Sinon renvoie sur register avec une erreur
+        res.render('register', {
+            userLoggedIn: false,
+            pageTitle: 'Register Page',
+            backgroundColor: '#f0f0f0',
+            fontColor: 'red',
+            errorMessage: 'Veuillez vous connecter pour continuer'
+        });
+    }
+});
+
+app.get("/login", (req, res) => {
+    res.render('login', {
         userLoggedIn: false
     });
 });
 
 
 // Route pour gérer la soumission du formulaire de login
-app.post('/login', (req, res) => {
+app.post('/login-data', (req, res) => {
     const token = crypto.randomBytes(64).toString('hex')
     const username = req.body.username;
     const password = sha256(req.body.password);
@@ -79,7 +95,7 @@ app.post('/login', (req, res) => {
                 }
             });
             res.cookie("sessionIdCookie", token, { httpOnly: true }, { expires: new Date(0) });
-            res.redirect('/dashboard');
+            res.redirect('/');
 
         } 
 
@@ -89,12 +105,6 @@ app.post('/login', (req, res) => {
         }
     });
 });
-
-app.post('/register', (req, res) => {
-    console.log('Appuie du bouton');
-    res.redirect('/register');
-});
-
 
 app.get('/register', (req, res) => {
     res.render('register', {
@@ -177,10 +187,10 @@ app.post("/logoff", (req, res) => {
 
     res.clearCookie("sessionIdCookie");
 
-    res.redirect('/dashboard');
+    res.redirect('/');
 });
 
-app.route('/dashboard')
+app.route('/')
     .get((req, res) => {
         if (req.cookies.sessionIdCookie) {
                 console.log("In dashboard")
