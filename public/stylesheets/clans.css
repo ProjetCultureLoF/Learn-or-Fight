@@ -1,0 +1,55 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+a {
+    text-decoration: none;
+}
+
+.container img {
+    width: 80%; /* La largeur de l'image est définie à 50% de la largeur de son conteneur parent (.container) */
+    height: auto; /* La hauteur est automatiquement ajustée pour maintenir le rapport hauteur/largeur de l'image */
+    border-radius: 8px; /* Vous pouvez également appliquer un arrondi aux coins de l'image si nécessaire */
+}
+
+.container {
+    width: 400px;
+    height: 400px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 20px;
+    width: 300px;
+    text-align: center;
+}
+
+.container h2 {
+    color: #333;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+.container button{
+    padding: 12px;
+    background-color: #4caf50;
+    border-radius: 10px;
+    transition: 0.3s;
+    
+}
+.container button:hover{
+    background-color: #50ce54;
+}
+
+
+  

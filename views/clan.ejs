@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="stylesheets/clans.css">
+
+    <title>Document</title>
+</head>
+<body>
+
+    <%- include ('header.ejs') %>
+    <% for(var i=0; i < clan.length; i++) {%>
+        <div class="container">
+            <form class="clan<%= i + 1 %>" action="/clan<%= i + 1 %>" method="post">
+            <%= clan[i] %>
+            <img src="images/img<%= i + 1 %>.jpg" alt="">
+            <button class="">Rejoindre ce clan</button>
+        </form>
+        </div>
+     <% } %>
+    
+    
+</body>
+</html>

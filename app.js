@@ -59,6 +59,77 @@ app.get('/', (req, res) => {
     }
 });
 
+app.get("/clan", (req, res) => {
+    const query = `SELECT name_clan FROM clan`
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Erreur lors de la vérification des informations de connexion : ' + err.stack);
+            res.status(500).send('Erreur serveur');
+            return;
+        }
+        else {
+            let clans = [];
+            for (let i = 0; i < results.length; i++) {
+                clans.push(results[i]["name_clan"])
+            }
+            res.render("clan", {
+                userLoggedIn: true,
+                clan: clans,
+            });
+        }
+    });
+    
+});
+
+
+app.post("/clan1", (req, res) => {
+    const token = req.cookies.sessionIdCookie;
+    const query = `UPDATE user SET id_clan = 1 WHERE token_user = "${token}"`
+
+    db.query(query, [token], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de la vérification des informations de connexion : ' + err.stack);
+            res.status(500).send('Erreur serveur');
+            return;
+        }
+        else {
+            res.redirect('/');
+        }
+    });
+});
+
+app.post("/clan2", (req, res) => {
+    const token = req.cookies.sessionIdCookie;
+    const query = `UPDATE user SET id_clan = 2 WHERE token_user = "${token}"`
+
+    db.query(query, [token], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de la vérification des informations de connexion : ' + err.stack);
+            res.status(500).send('Erreur serveur');
+            return;
+        }
+        else {
+            res.redirect('/');
+        }
+    });
+});
+app.post("/clan3", (req, res) => {
+    const token = req.cookies.sessionIdCookie;
+    const query = `UPDATE user SET id_clan = 3 WHERE token_user = "${token}"`
+
+    db.query(query, [token], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de la vérification des informations de connexion : ' + err.stack);
+            res.status(500).send('Erreur serveur');
+            return;
+        }
+        else {
+            res.redirect('/');
+        }
+    });
+});
+
+
 app.get("/login", (req, res) => {
     res.render('login', {
         userLoggedIn: false
@@ -134,7 +205,7 @@ app.post('/register-data', (req, res) => {
 
             // Succès de l'inscription, rediriger vers la page de connexion
             res.cookie("sessionIdCookie", token, { httpOnly: true }, { expires: new Date(0) });
-            res.redirect('/dashboard');
+            res.redirect('/clan');
         });
     } else {
         // Les mots de passe ne correspondent pas, afficher un message d'erreur
@@ -212,12 +283,24 @@ app.route('/')
 
 app.route('/:dep')
     .get((req, res) => {
+        if (req.cookies.sessionIdCookie) {
+
         console.log(req.params);
         res.render('./departement', { dep: req.params.dep, getDataFrance: dataFrance, userLoggedIn: true }, function (err, data) {
             console.log(err);
             res.send(data);
         })
-    });
+    } else {
+        //Sinon renvoie sur register avec une erreur
+        res.render('register', {
+            userLoggedIn: false,
+            pageTitle: 'Register Page',
+            backgroundColor: '#f0f0f0',
+            fontColor: 'red',
+            errorMessage: 'Veuillez vous connecter pour continuer'
+        }
+    )};
+});
 
 // Démarrage du serveur
 app.listen(port, () => {
