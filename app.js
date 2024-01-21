@@ -69,7 +69,7 @@ app.get("/clan", (req, res) => {
         }
         else {
             let clans = [];
-            for (let i = 0; i < results.length; i++) {
+            for (let i = 0; i < 3; i++) {
                 clans.push(results[i]["name_clan"])
             }
             res.render("clan", {
