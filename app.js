@@ -293,15 +293,8 @@ function userLoggedIn(token, res) {
                 console.error('Erreur lors de l\'insertion des données d\'inscription : ' + err.stack);
                 reject(err);
             } else if (results.length > 0) {
-                console.log("resultat: ", results, "Test: ", results.length)
-                if (results[0]["token_user"] == token) {
-                    resolve(true);
-                }
-                else resolve(false);
+                resolve(true);
             } else {
-                /*console.log("Vide ?: ", results[0] != [])
-                console.log("Comparaison: ", results[0]["token_user"] == token)
-                console.log("resultat: ", results)*/
                 resolve(false);
             }
         });
