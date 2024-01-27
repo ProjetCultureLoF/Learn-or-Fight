@@ -5,6 +5,7 @@ const sha256 = require("crypto-js/sha256");
 const crypto = require("crypto");
 const ejs = require('ejs');
 const cookieParser = require("cookie-parser");
+const multer = require('multer');
 
 
 const app = express();
@@ -41,18 +42,40 @@ app.use(express.static('public'));
 
 const dataFrance = ejs.fileLoader('./src/departements-version-simplifiee.geojson');
 
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, __dirname + '/public/images/user'); // Destination folder for uploaded files
+    },
+    filename: (req, file, cb) => {
+        const query = `SELECT name_user FROM user WHERE token_user = "${req.cookies.sessionIdCookie}"`;
+        var username;
+        console.log("QYERY", query)
+        db.query(query, (err, results) => {
+            username = results[0]["name_user"];
+            console.log("USER", username);  
+            cb(null, username + "." + file.originalname.split(".")[1]);
+            fileUpload(username, file, req)
+        });
+        
+    },
+  });
+
+  const upload = multer({ storage: storage });
+
+function fileUpload(username, file, req) {
+    const query = `UPDATE user SET image_path_user = "${username + "." + file.originalname.split(".")[1]}" WHERE token_user = "${req.cookies.sessionIdCookie}"`;
+    db.query(query);
+}
+
 // Route pour la page de login
 app.get('/', (req, res) => {
     if (req.cookies.sessionIdCookie) {
-        console.log("In dashboard")
         // Rediriger vers la page si le client possède un cookie
         res.render('map', { getDataFrance: dataFrance,  userLoggedIn: true});
 } else {
         //Sinon renvoie sur register avec une erreur
-        res.render('register', {
+        res.render('login', {
             userLoggedIn: false,
-            pageTitle: 'Register Page',
-            backgroundColor: '#f0f0f0',
             fontColor: 'red',
             errorMessage: 'Veuillez vous connecter pour continuer'
         });
@@ -60,26 +83,29 @@ app.get('/', (req, res) => {
 });
 
 app.get("/clan", (req, res) => {
-    const query = `SELECT name_clan FROM clan`
-    db.query(query, (err, results) => {
-        if (err) {
-            console.error('Erreur lors de la vérification des informations de connexion : ' + err.stack);
-            res.status(500).send('Erreur serveur');
-            return;
-        }
-        else {
-            let clans = [];
-            for (let i = 0; i < 3; i++) {
-                clans.push(results[i]["name_clan"])
+    const token = req.cookies.sessionIdCookie;
+    let query = `SELECT token_user FROM user WHERE token_user = "${token}"`
+    db.query(query, [token], (err, results) => {})
+
+         query = `SELECT name_clan FROM clan`
+        db.query(query, (err, results) => {
+            if (err) {
+                console.error('Erreur lors de la vérification des informations de connexion : ' + err.stack);
+                res.status(500).send('Erreur serveur');
+                return;
             }
-            res.render("clan", {
-                userLoggedIn: true,
-                clan: clans,
-            });
-        }
+            else {
+                let clans = [];
+                for (let i = 0; i < 3; i++) {
+                    clans.push(results[i]["name_clan"])
+                }
+                res.render("clan", {
+                    userLoggedIn: true,
+                    clan: clans,
+                });
+            }
+        }); 
     });
-    
-});
 
 
 app.post("/clan1", (req, res) => {
@@ -113,6 +139,7 @@ app.post("/clan2", (req, res) => {
         }
     });
 });
+
 app.post("/clan3", (req, res) => {
     const token = req.cookies.sessionIdCookie;
     const query = `UPDATE user SET id_clan = 3 WHERE token_user = "${token}"`
@@ -129,13 +156,13 @@ app.post("/clan3", (req, res) => {
     });
 });
 
-
 app.get("/login", (req, res) => {
     res.render('login', {
-        userLoggedIn: false
+        userLoggedIn: false,
+        errorMessage: "",
+        fontColor: ""
     });
 });
-
 
 // Route pour gérer la soumission du formulaire de login
 app.post('/login-data', (req, res) => {
@@ -145,7 +172,6 @@ app.post('/login-data', (req, res) => {
 
     // Vérification des informations de connexion dans la base de données
     const query = `SELECT * FROM User WHERE name_user = "${username}" AND password_user = "${password}"`;
-    console.log('Query:', query, [username, password]); // Log de la requête SQL
 
     //Requête SQL du pseudo et mdp
     db.query(query, [username, password], (err, results) => {
@@ -156,7 +182,6 @@ app.post('/login-data', (req, res) => {
         }
 
         if (results.length > 0) {
-            console.log('Utilisateur connecté avec succès');
             const query = `UPDATE user SET token_user = "${token}" WHERE name_user = "${username}"`
             db.query(query, [username, token], (err, results) => {
                 if (err) {
@@ -171,8 +196,12 @@ app.post('/login-data', (req, res) => {
         } 
 
         else {
-            console.log('Échec de la connexion');
-            res.status(401).send('Échec de la connexion');
+            res.render('login', {
+                userLoggedIn: false,
+                errorMessage: "Votre mot de passe ou votre nom d'utilisateur ne sont pas correct",
+                fontColor: 'red'
+                // Ajoutez d'autres données nécessaires pour la page d'inscription
+              });
         }
     });
 });
@@ -194,7 +223,6 @@ app.post('/register-data', (req, res) => {
     if (password === confirmPassword) {
         password = sha256(password);
         const query = `INSERT INTO User (name_user, password_user, email_user, id_clan, token_user) VALUES ("${username}", "${password}", "${email}", 1, "${token}")`;
-        console.log('Query:', query, [username, password]); // Log de la requête SQL
 
         db.query(query, [username, password, email], (err, results) => {
             if (err) {
@@ -220,32 +248,37 @@ app.post('/register-data', (req, res) => {
 });
 
 app.get('/mon-compte', (req, res) => {
-    const token = req.cookies.sessionIdCookie
-    console.log("Nom d'utilisateur: ", token)
-    const query = `SELECT * FROM user WHERE token_user = "${token}"`
-    db.query(query, [token], (err, results) => {
-        if (err) {
-            console.error('Erreur lors de l\'insertion des données d\'inscription : ' + err.stack);
-            res.status(500).send('Erreur serveur');
-            return;
-        }
-        else {
-            console.log(results[0]["email_user"]);
-            const emails = results[0]["email_user"];
-            const usernames = results[0]["name_user"]
-            res.render('mon-compte', {
-                userLoggedIn: true,
-                username: usernames,
-                email: emails
-                // Ajoutez d'autres données nécessaires pour la page d'inscription
-                });
-        }
-    })
+    const token = req.cookies.sessionIdCookie;
+    const test = userLoggedIn(token, res);
+    console.log("Test de connexion: ", test);
+    if (userLoggedIn(token, res)) {
+        const query = `SELECT * FROM user WHERE token_user = "${token}"`
+        db.query(query, [token], (err, results) => {
+            if (err) {
+                console.error('Erreur lors de l\'insertion des données d\'inscription : ' + err.stack);
+                res.status(500).send('Erreur serveur');
+                return;
+            }
+            else {
+                const emails = results[0]["email_user"];
+                const usernames = results[0]["name_user"];
+                const imagePaths =  results[0]["image_path_user"];
+                const userStat = {"ma région": "100", "ma deuxieme": "10", }
+                res.render('mon-compte', {
+                    userLoggedIn: true,
+                    username: usernames,
+                    email: emails,
+                    imagePath: imagePaths,
+                    userStats: userStat
+                    // Ajoutez d'autres données nécessaires pour la page d'inscription
+                    });
+            }
+        })
+    } else res.redirect('/logoff');
     
 });
 
 app.post("/logoff", (req, res) => {
-    console.log("logging off");
     const token = req.cookies.sessionIdCookie;
     const query = `UPDATE user SET token_user = NULL WHERE token_user = "${token}"`
     db.query(query, [token], (err, results) => {
@@ -261,63 +294,100 @@ app.post("/logoff", (req, res) => {
     res.redirect('/');
 });
 
+app.post("/modify-image", upload.single("pfp"), (req, res) => {
+    console.log("FILE", req.file);
+    res.redirect("/mon-compte")
+});
+
+app.post("/modify-name", (req, res) => {
+    const token = req.cookies.sessionIdCookie;
+    const username = req.body.username;
+    const query = `UPDATE user SET name_user = "${username}" WHERE token_user = "${token}"`
+    db.query(query, [token, username], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de l\'insertion des données: ' + err.stack);
+            res.status(500).send('Erreur serveur');
+            return;
+        }
+    });
+    res.redirect("/mon-compte")
+});
+
+app.post("/modify-email", (req, res) => {
+    const token = req.cookies.sessionIdCookie;
+    const email = req.body.email;
+    const query = `UPDATE user SET email_user = "${email}" WHERE token_user = "${token}"`
+    db.query(query, [token, email], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de l\'insertion des données d\'inscription : ' + err.stack);
+            res.status(500).send('Erreur serveur');
+            return;
+        }
+    });
+    res.redirect("/mon-compte")
+});
+
 app.route('/')
     .get((req, res) => {
-        if (req.cookies.sessionIdCookie) {
-                console.log("In dashboard")
-                // Rediriger vers la page si le client possède un cookie
-                res.render('map', { getDataFrance: dataFrance,  userLoggedIn: true});
+        const token = req.cookies.sessionIdCookie;
+        if (userLoggedIn(token, res)) { //Uses the userLoggedIn function to test if the user has a valid token
+            res.render('map', { getDataFrance: dataFrance,  userLoggedIn: true});
         } else {
-                //Sinon renvoie sur register avec une erreur
-                res.render('register', {
-                    userLoggedIn: false,
-                    pageTitle: 'Register Page',
-                    backgroundColor: '#f0f0f0',
-                    fontColor: 'red',
-                    errorMessage: 'Veuillez vous connecter pour continuer'
-                }
-            );
+            res.render('login', {
+                userLoggedIn: false,
+                fontColor: 'red',
+                errorMessage: 'Veuillez vous connecter pour continuer'
+            } );
         }
     }
 );
 
 app.route('/:dep')
     .get((req, res) => {
-        if (req.cookies.sessionIdCookie) {
+        const token = req.cookies.sessionIdCookie;
+        if (userLoggedIn(token, res)) { 
+            res.render('./departement', { dep: req.params.dep, getDataFrance: dataFrance, userLoggedIn: true }, function (err, data) {
+                if (err){
+                    console.log(err);
+                }
 
-        console.log(req.params);
-        res.render('./departement', { dep: req.params.dep, getDataFrance: dataFrance, userLoggedIn: true }, function (err, data) {
-            console.log(err);
-            res.send(data);
+                else {
+                    res.send(data);
+                }
         })
     } else {
-        //Sinon renvoie sur register avec une erreur
-        res.render('register', {
+        //Takes you to the login page if your token is invalid or expired
+        res.render('login', {
             userLoggedIn: false,
-            pageTitle: 'Register Page',
-            backgroundColor: '#f0f0f0',
             fontColor: 'red',
             errorMessage: 'Veuillez vous connecter pour continuer'
         }
     )};
 });
 
-// Démarrage du serveur
+//Starts the server
 app.listen(port, () => {
     console.log(`Serveur en cours d'exécution sur http://localhost:${port}`);
 });
-/*
-function userLoggedIn(token){
-    const query = `SELECT * FROM user where token_user == ${token};`;
+
+
+//Function to looks within the database if the user has the same token that he has on the website
+function userLoggedIn(token, res){
+    const query = `SELECT * FROM user where token_user = "${token}"`;
+    console.log("UseLoggedIn")
     db.query(query, [token], (err, results) => {
         if (err) {
             console.error('Erreur lors de l\'insertion des données d\'inscription : ' + err.stack);
             res.status(500).send('Erreur serveur');
             return;
         }
-        else if(results[0]["name_user"] == ""){
-            return false    
+        else if(results[0] == []){
+            console.log("Returning False    ");
+            return false;    
         }
-        else { return true }
+        else{
+            console.log("Returning true")
+            return true;
+        }
     });
-};*/
+};

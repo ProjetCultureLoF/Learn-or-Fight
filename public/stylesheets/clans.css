@@ -29,6 +29,7 @@ a {
     margin: 20px;
     width: 300px;
     text-align: center;
+
 }
 
 .container h2 {
@@ -45,7 +46,7 @@ label {
     background-color: #4caf50;
     border-radius: 10px;
     transition: 0.3s;
-    
+
 }
 .container button:hover{
     background-color: #50ce54;
@@ -53,3 +54,5 @@ label {
 
 
   
+
+

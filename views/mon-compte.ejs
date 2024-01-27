@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="stylesheets/reglog2.css">
+    <link rel="stylesheet" type="text/css" href="stylesheets/account.css">
 
     <title>Document</title>
 </head>
@@ -13,28 +13,54 @@
 
     <div class="container">
         <div class="login-container">
-        <form class="login-form" action="/modify-name" method="post">
-            <div class="form-group">
-                <h1>Nom d'utilisateur:  </h1>
-                <input type="text" id="username" name="username" minlength="4" maxlength="15" value="<%= username %>" required>
-                <button type="submit">Modifier pseudo</button>
-            </div>
-        </form>
-        <form class="login-form" action="/modify-email" method="post">
-            <div class="form-group">
-                <h1>Adresse mail: </h1>
-                <input type="email" id="email" name="email" value="<%= email %>" required/>
-                <button type="submit">Modifier email</button>
-            </div>
-        </form>
+            <h1>Scores des régions:</h1>
+            <table>
+                <tbody>
+                    <% for (var department in userStats) { %>
+                        <tr>
+                            <td><%= department %></td>
+                            <td><%= userStats[department] %></td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+
+            <h1>Scores de clan:</h1>
+            <table>
+                <tbody>
+                    <% for (var department in userStats) { %>
+                        <tr>
+                            <td><%= department %></td>
+                            <td><%= userStats[department] %></td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
         </div>
-        <div class="img-container">  
-            <form class="login-form" action="/modify-email" method="post">
+        
+        <div class="profile-container">  
+            <form class="login-form" action="/modify-image" method="post" enctype="multipart/form-data">
                 <div class="form-group">    
-                    <h1>Mon profile:</h1>  
-                    <img src="images/img1.jpg" height="400px" width="400px">
-                    <input type="file">
-                    <button type="submit">Changer ma photo</button>
+                    <h1>Mon profil:</h1>  
+                    <img src="images/user/<%= imagePath  %>" height="300px" width="300px">
+                    <input type="file" name="pfp" accept="image/*">
+                    <button type="submit"> Changer ma photo</button>
+                </div>
+            </form>
+
+            <form class="login-form" action="/modify-name" method="post">
+                <div class="form-group">
+                    <h1>Nom d'utilisateur:  </h1>
+                    <input type="text" id="username" name="username" minlength="4" maxlength="15" value="<%= username %>" required>
+                    <button type="submit">Modifier pseudo</button>
+                </div>
+            </form>
+
+            <form class="login-form" action="/modify-email" method="post">
+                <div class="form-group">
+                    <h1>Adresse mail: </h1>
+                    <input type="email" id="email" name="email" value="<%= email %>" required/>
+                    <button type="submit">Modifier email</button>
                 </div>
             </form>
         </div>
