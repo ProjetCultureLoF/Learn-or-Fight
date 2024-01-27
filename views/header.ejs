@@ -19,7 +19,7 @@
             <div class="right">
                 <% if (userLoggedIn) { %>
                     <a href="/mon-compte">Mon compte</a>
-                    <form action="/logoff" method="post"> <button type="submit">Se déconnecter</button></form>
+                    <form action="/logoff" method="get"> <button type="submit">Se déconnecter</button></form>
                 <% } else { %>
                     <a href="/login">Se connecter</a>
                     <a href="/register">S'enregistrer</a>
