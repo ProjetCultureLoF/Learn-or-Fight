@@ -38,6 +38,7 @@ app.use(cookieParser());
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
 
+//Répertoire des images et du css
 app.use(express.static('public'));
 
 const dataFrance = ejs.fileLoader('./src/departements-version-simplifiee.geojson');
